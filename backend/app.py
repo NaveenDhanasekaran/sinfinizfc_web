@@ -10,10 +10,6 @@ from models import User, Product, BlogPost, GalleryItem, ChatbotSettings
 import json
 import subprocess
 import atexit
-<<<<<<< HEAD
-import os
-=======
->>>>>>> 5ca270d8b6836247885fd749a0b247a409d427a5
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
@@ -372,7 +368,6 @@ def contact_form():
     return jsonify({'message': 'Message sent successfully'}), 200
 
 if __name__ == '__main__':
-<<<<<<< HEAD
     fe_proc = None
     if os.environ.get('START_FRONTEND_DEV') == '1':
         frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
@@ -390,19 +385,3 @@ if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
     port = int(os.environ.get('PORT', '5000'))
     app.run(host='0.0.0.0', port=port, debug=debug_mode)
-=======
-    frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
-    npm_cmd = 'npm.cmd' if os.name == 'nt' else 'npm'
-    fe_proc = None
-    try:
-        fe_proc = subprocess.Popen([npm_cmd, 'start'], cwd=frontend_path)
-    except Exception:
-        fe_proc = None
- 
-    def _cleanup():
-        if fe_proc is not None and fe_proc.poll() is None:
-            fe_proc.terminate()
-    atexit.register(_cleanup)
- 
-    app.run(debug=True, port=5000)
->>>>>>> 5ca270d8b6836247885fd749a0b247a409d427a5

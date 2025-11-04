@@ -47,7 +47,31 @@ A professional, full-stack website for Sinfini Marketing FZC, a textile export c
 
 ## 🔧 Installation & Setup
 
-### Backend Setup
+### Quick Start (Recommended)
+
+1. **One-time setup**:
+```bash
+# Install backend dependencies
+pip install -r backend/requirements.txt
+
+# Install frontend dependencies
+cd frontend && npm install && cd ..
+```
+
+2. **Start both servers with one command**:
+```bash
+python app.py
+```
+
+This will start:
+- Backend API on `http://localhost:5000`
+- Frontend on `http://localhost:3000`
+
+Press `Ctrl+C` to stop both servers.
+
+### Manual Setup (Alternative)
+
+#### Backend Setup
 
 1. Navigate to backend directory:
 ```bash
@@ -82,7 +106,7 @@ python app.py
 
 Backend will run on `http://localhost:5000`
 
-### Frontend Setup
+#### Frontend Setup
 
 1. Navigate to frontend directory:
 ```bash
@@ -112,8 +136,11 @@ Frontend will run on `http://localhost:3000`
 
 ```
 sinfin_website/
+├── app.py                  # 🚀 Main launcher (starts both servers)
+├── render.yaml             # 🌐 Render deployment config
+├── README.md
 ├── backend/
-│   ├── app.py              # Main Flask application
+│   ├── app.py              # Flask application
 │   ├── database.py         # Database initialization
 │   ├── models.py           # Database models
 │   ├── requirements.txt    # Python dependencies
@@ -121,20 +148,19 @@ sinfin_website/
 │       ├── products/
 │       ├── blog/
 │       └── gallery/
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── components/     # Reusable components
-│   │   ├── pages/          # Page components
-│   │   │   ├── admin/      # Admin panel pages
-│   │   │   └── ...         # Public pages
-│   │   ├── context/        # React context (Auth)
-│   │   ├── utils/          # API utilities
-│   │   ├── App.js
-│   │   └── index.js
-│   ├── package.json
-│   └── tailwind.config.js
-└── README.md
+└── frontend/
+    ├── public/
+    ├── src/
+    │   ├── components/     # Reusable components
+    │   ├── pages/          # Page components
+    │   │   ├── admin/      # Admin panel pages
+    │   │   └── ...         # Public pages
+    │   ├── context/        # React context (Auth)
+    │   ├── utils/          # API utilities
+    │   ├── App.js
+    │   └── index.js
+    ├── package.json
+    └── tailwind.config.js
 ```
 
 ## 🎨 Color Scheme
