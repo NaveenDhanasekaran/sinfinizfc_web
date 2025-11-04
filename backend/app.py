@@ -8,6 +8,8 @@ from datetime import timedelta
 from database import init_db, get_db
 from models import User, Product, BlogPost, GalleryItem, ChatbotSettings
 import json
+import subprocess
+import atexit
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
@@ -355,4 +357,17 @@ def contact_form():
     return jsonify({'message': 'Message sent successfully'}), 200
 
 if __name__ == '__main__':
+    frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
+    npm_cmd = 'npm.cmd' if os.name == 'nt' else 'npm'
+    fe_proc = None
+    try:
+        fe_proc = subprocess.Popen([npm_cmd, 'start'], cwd=frontend_path)
+    except Exception:
+        fe_proc = None
+ 
+    def _cleanup():
+        if fe_proc is not None and fe_proc.poll() is None:
+            fe_proc.terminate()
+    atexit.register(_cleanup)
+ 
     app.run(debug=True, port=5000)
