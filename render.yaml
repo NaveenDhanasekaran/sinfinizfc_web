@@ -13,11 +13,23 @@ services:
         value: "0"
 
   # Frontend (React)
+<<<<<<< HEAD
   - type: static
+=======
+  - type: web
+>>>>>>> 873b1f1369de5779d663ca056f703b2744871b62
     name: sinfini-frontend
+    env: node
+    plan: free
+    region: oregon
     rootDir: frontend
+<<<<<<< HEAD
     buildCommand: npm install && npm run build
     staticPublishPath: build
     envVars:
       - key: NODE_VERSION
         value: "18"
+=======
+    buildCommand: npm ci && npm run build
+    startCommand: npx serve -s build -l $PORT  # serve production build
+>>>>>>> 873b1f1369de5779d663ca056f703b2744871b62
