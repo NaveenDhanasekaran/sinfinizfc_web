@@ -1,177 +1,149 @@
 from datetime import datetime
-from sqlalchemy.orm import declarative_base, Mapped, mapped_column, Session
-from sqlalchemy import Integer, String, Text, DateTime
 
-Base = declarative_base()
-
-def row_to_dict(obj):
-    return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
-
-class User(Base):
-    __tablename__ = 'users'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
+class User:
     @staticmethod
-    def get_by_id(db: Session, user_id):
-        obj = db.get(User, user_id)
-        return row_to_dict(obj) if obj else None
-
+    def get_by_id(db, user_id):
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    
     @staticmethod
-    def get_by_username(db: Session, username):
-        obj = db.query(User).filter_by(username=username).first()
-        return row_to_dict(obj) if obj else None
+    def get_by_username(db, username):
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
 
-class Product(Base):
-    __tablename__ = 'products'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String, nullable=False)
-    category: Mapped[str] = mapped_column(String, nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=True)
-    image_url: Mapped[str] = mapped_column(String, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
+class Product:
     @staticmethod
-    def get_all(db: Session):
-        rows = db.query(Product).order_by(Product.created_at.desc()).all()
-        return [row_to_dict(r) for r in rows]
-
+    def get_all(db):
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM products ORDER BY created_at DESC')
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    
     @staticmethod
-    def get_by_id(db: Session, product_id):
-        obj = db.get(Product, product_id)
-        return row_to_dict(obj) if obj else None
-
+    def get_by_id(db, product_id):
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM products WHERE id = ?', (product_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    
     @staticmethod
-    def create(db: Session, name, category, description, image_url=None):
-        obj = Product(name=name, category=category, description=description, image_url=image_url)
-        db.add(obj)
+    def create(db, name, category, description, image_url=None):
+        cursor = db.cursor()
+        cursor.execute('''
+            INSERT INTO products (name, category, description, image_url)
+            VALUES (?, ?, ?, ?)
+        ''', (name, category, description, image_url))
         db.commit()
-        db.refresh(obj)
-        return obj.id
-
+        return cursor.lastrowid
+    
     @staticmethod
-    def update(db: Session, product_id, name, category, description, image_url):
-        obj = db.get(Product, product_id)
-        if not obj:
-            return
-        obj.name = name
-        obj.category = category
-        obj.description = description
-        obj.image_url = image_url
-        obj.updated_at = datetime.utcnow()
+    def update(db, product_id, name, category, description, image_url):
+        cursor = db.cursor()
+        cursor.execute('''
+            UPDATE products 
+            SET name = ?, category = ?, description = ?, image_url = ?, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (name, category, description, image_url, product_id))
+        db.commit()
+    
+    @staticmethod
+    def delete(db, product_id):
+        cursor = db.cursor()
+        cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
         db.commit()
 
+class BlogPost:
     @staticmethod
-    def delete(db: Session, product_id):
-        obj = db.get(Product, product_id)
-        if obj:
-            db.delete(obj)
-            db.commit()
-
-class BlogPost(Base):
-    __tablename__ = 'blog_posts'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    title: Mapped[str] = mapped_column(String, nullable=False)
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    author: Mapped[str] = mapped_column(String, default='Admin')
-    image_url: Mapped[str] = mapped_column(String, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
+    def get_all(db):
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM blog_posts ORDER BY created_at DESC')
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    
     @staticmethod
-    def get_all(db: Session):
-        rows = db.query(BlogPost).order_by(BlogPost.created_at.desc()).all()
-        return [row_to_dict(r) for r in rows]
-
+    def get_by_id(db, post_id):
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM blog_posts WHERE id = ?', (post_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    
     @staticmethod
-    def get_by_id(db: Session, post_id):
-        obj = db.get(BlogPost, post_id)
-        return row_to_dict(obj) if obj else None
-
-    @staticmethod
-    def create(db: Session, title, content, author='Admin', image_url=None):
-        obj = BlogPost(title=title, content=content, author=author, image_url=image_url)
-        db.add(obj)
+    def create(db, title, content, author='Admin', image_url=None):
+        cursor = db.cursor()
+        cursor.execute('''
+            INSERT INTO blog_posts (title, content, author, image_url)
+            VALUES (?, ?, ?, ?)
+        ''', (title, content, author, image_url))
         db.commit()
-        db.refresh(obj)
-        return obj.id
-
+        return cursor.lastrowid
+    
     @staticmethod
-    def update(db: Session, post_id, title, content, author, image_url):
-        obj = db.get(BlogPost, post_id)
-        if not obj:
-            return
-        obj.title = title
-        obj.content = content
-        obj.author = author
-        obj.image_url = image_url
-        obj.updated_at = datetime.utcnow()
+    def update(db, post_id, title, content, author, image_url):
+        cursor = db.cursor()
+        cursor.execute('''
+            UPDATE blog_posts 
+            SET title = ?, content = ?, author = ?, image_url = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (title, content, author, image_url, post_id))
+        db.commit()
+    
+    @staticmethod
+    def delete(db, post_id):
+        cursor = db.cursor()
+        cursor.execute('DELETE FROM blog_posts WHERE id = ?', (post_id,))
         db.commit()
 
+class GalleryItem:
     @staticmethod
-    def delete(db: Session, post_id):
-        obj = db.get(BlogPost, post_id)
-        if obj:
-            db.delete(obj)
-            db.commit()
-
-class GalleryItem(Base):
-    __tablename__ = 'gallery_items'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    media_type: Mapped[str] = mapped_column(String, nullable=False)
-    media_url: Mapped[str] = mapped_column(String, nullable=False)
-    title: Mapped[str] = mapped_column(String, nullable=True)
-    description: Mapped[str] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
+    def get_all(db):
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM gallery_items ORDER BY created_at DESC')
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    
     @staticmethod
-    def get_all(db: Session):
-        rows = db.query(GalleryItem).order_by(GalleryItem.created_at.desc()).all()
-        return [row_to_dict(r) for r in rows]
-
+    def get_by_id(db, item_id):
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM gallery_items WHERE id = ?', (item_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    
     @staticmethod
-    def get_by_id(db: Session, item_id):
-        obj = db.get(GalleryItem, item_id)
-        return row_to_dict(obj) if obj else None
-
-    @staticmethod
-    def create(db: Session, media_type, media_url, title='', description=''):
-        obj = GalleryItem(media_type=media_type, media_url=media_url, title=title, description=description)
-        db.add(obj)
+    def create(db, media_type, media_url, title='', description=''):
+        cursor = db.cursor()
+        cursor.execute('''
+            INSERT INTO gallery_items (media_type, media_url, title, description)
+            VALUES (?, ?, ?, ?)
+        ''', (media_type, media_url, title, description))
         db.commit()
-        db.refresh(obj)
-        return obj.id
-
+        return cursor.lastrowid
+    
     @staticmethod
-    def delete(db: Session, item_id):
-        obj = db.get(GalleryItem, item_id)
-        if obj:
-            db.delete(obj)
-            db.commit()
+    def delete(db, item_id):
+        cursor = db.cursor()
+        cursor.execute('DELETE FROM gallery_items WHERE id = ?', (item_id,))
+        db.commit()
 
-class ChatbotSettings(Base):
-    __tablename__ = 'chatbot_settings'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    greeting: Mapped[str] = mapped_column(Text, default='Hello! How can I help you today?')
-    faqs: Mapped[str] = mapped_column(Text, default='[]')
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
+class ChatbotSettings:
     @staticmethod
-    def get(db: Session):
-        obj = db.query(ChatbotSettings).order_by(ChatbotSettings.id.asc()).first()
-        return row_to_dict(obj) if obj else {'greeting': 'Hello!', 'faqs': '[]'}
-
+    def get(db):
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM chatbot_settings LIMIT 1')
+        row = cursor.fetchone()
+        return dict(row) if row else {'greeting': 'Hello!', 'faqs': '[]'}
+    
     @staticmethod
-    def update(db: Session, greeting, faqs):
-        obj = db.query(ChatbotSettings).order_by(ChatbotSettings.id.asc()).first()
-        if not obj:
-            obj = ChatbotSettings(greeting=greeting, faqs=faqs)
-            db.add(obj)
-        else:
-            obj.greeting = greeting
-            obj.faqs = faqs
-            obj.updated_at = datetime.utcnow()
+    def update(db, greeting, faqs):
+        cursor = db.cursor()
+        cursor.execute('''
+            UPDATE chatbot_settings 
+            SET greeting = ?, faqs = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = 1
+        ''', (greeting, faqs))
         db.commit()

@@ -15,12 +15,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 app.config['JWT_SECRET_KEY'] = 'jwt-secret-key-change-in-production'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
-
-# Persist data/uploads to a configurable directory (works on Render disk)
-DEFAULT_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data'))
-DATA_DIR = os.environ.get('DATA_DIR', DEFAULT_DATA_DIR)
-os.makedirs(DATA_DIR, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = os.path.join(DATA_DIR, 'uploads')
+app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 """Ensure JWT is read from Authorization header to avoid 422 errors when verifying
 tokens from the admin dashboard which sends `Authorization: Bearer <token>`.
@@ -103,7 +98,7 @@ def admin_gallery():
 def admin_chatbot():
     return render_template('admin/chatbot.html')
 
-# Ensure upload directories exist (under DATA_DIR)
+# Ensure upload directories exist
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'products'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'blog'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'gallery'), exist_ok=True)
@@ -152,22 +147,18 @@ def verify_token():
 @app.route('/api/products', methods=['GET'])
 def get_products():
     db = get_db()
-    try:
-        products = Product.get_all(db)
-        return jsonify(products), 200
-    finally:
-        db.close()
+    products = Product.get_all(db)
+    return jsonify(products), 200
 
 @app.route('/api/products/<int:product_id>', methods=['GET'])
 def get_product(product_id):
     db = get_db()
-    try:
-        product = Product.get_by_id(db, product_id)
-        if product:
-            return jsonify(product), 200
-        return jsonify({'error': 'Product not found'}), 404
-    finally:
-        db.close()
+    product = Product.get_by_id(db, product_id)
+    
+    if product:
+        return jsonify(product), 200
+    
+    return jsonify({'error': 'Product not found'}), 404
 
 @app.route('/api/products', methods=['POST'])
 @jwt_required()
@@ -183,18 +174,16 @@ def create_product():
         image_url = f'/uploads/products/{filename}'
     
     db = get_db()
-    try:
-        product_id = Product.create(
-            db,
-            name=data.get('name'),
-            category=data.get('category'),
-            description=data.get('description'),
-            image_url=image_url
-        )
-        product = Product.get_by_id(db, product_id)
-        return jsonify(product), 201
-    finally:
-        db.close()
+    product_id = Product.create(
+        db,
+        name=data.get('name'),
+        category=data.get('category'),
+        description=data.get('description'),
+        image_url=image_url
+    )
+    
+    product = Product.get_by_id(db, product_id)
+    return jsonify(product), 201
 
 @app.route('/api/products/<int:product_id>', methods=['PUT'])
 @jwt_required()
@@ -203,63 +192,54 @@ def update_product(product_id):
     image = request.files.get('image')
     
     db = get_db()
-    try:
-        product = Product.get_by_id(db, product_id)
-        if not product:
-            return jsonify({'error': 'Product not found'}), 404
-        
-        image_url = product['image_url']
-        if image and allowed_file(image.filename):
-            filename = secure_filename(image.filename)
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'products', filename)
-            image.save(image_path)
-            image_url = f'/uploads/products/{filename}'
-        
-        Product.update(
-            db,
-            product_id,
-            name=data.get('name', product['name']),
-            category=data.get('category', product['category']),
-            description=data.get('description', product['description']),
-            image_url=image_url
-        )
-        
-        updated_product = Product.get_by_id(db, product_id)
-        return jsonify(updated_product), 200
-    finally:
-        db.close()
+    product = Product.get_by_id(db, product_id)
+    
+    if not product:
+        return jsonify({'error': 'Product not found'}), 404
+    
+    image_url = product['image_url']
+    if image and allowed_file(image.filename):
+        filename = secure_filename(image.filename)
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'products', filename)
+        image.save(image_path)
+        image_url = f'/uploads/products/{filename}'
+    
+    Product.update(
+        db,
+        product_id,
+        name=data.get('name', product['name']),
+        category=data.get('category', product['category']),
+        description=data.get('description', product['description']),
+        image_url=image_url
+    )
+    
+    updated_product = Product.get_by_id(db, product_id)
+    return jsonify(updated_product), 200
 
 @app.route('/api/products/<int:product_id>', methods=['DELETE'])
 @jwt_required()
 def delete_product(product_id):
     db = get_db()
-    try:
-        Product.delete(db, product_id)
-        return jsonify({'message': 'Product deleted successfully'}), 200
-    finally:
-        db.close()
+    Product.delete(db, product_id)
+    return jsonify({'message': 'Product deleted successfully'}), 200
 
 # ==================== BLOG ROUTES ====================
 
 @app.route('/api/blog', methods=['GET'])
 def get_blog_posts():
     db = get_db()
-    try:
-        posts = BlogPost.get_all(db)
-        return jsonify(posts), 200
-    finally:
-        db.close()
+    posts = BlogPost.get_all(db)
+    return jsonify(posts), 200
 
 @app.route('/api/blog/<int:post_id>', methods=['GET'])
 def get_blog_post(post_id):
     db = get_db()
-    try:
-        post = BlogPost.get_by_id(db, post_id)
-        if post:
-            return jsonify(post), 200
-        return jsonify({'error': 'Blog post not found'}), 404
-    finally:
-        db.close()
+    post = BlogPost.get_by_id(db, post_id)
+    
+    if post:
+        return jsonify(post), 200
+    
+    return jsonify({'error': 'Blog post not found'}), 404
 
 @app.route('/api/blog', methods=['POST'])
 @jwt_required()
@@ -275,18 +255,16 @@ def create_blog_post():
         image_url = f'/uploads/blog/{filename}'
     
     db = get_db()
-    try:
-        post_id = BlogPost.create(
-            db,
-            title=data.get('title'),
-            content=data.get('content'),
-            author=data.get('author', 'Admin'),
-            image_url=image_url
-        )
-        post = BlogPost.get_by_id(db, post_id)
-        return jsonify(post), 201
-    finally:
-        db.close()
+    post_id = BlogPost.create(
+        db,
+        title=data.get('title'),
+        content=data.get('content'),
+        author=data.get('author', 'Admin'),
+        image_url=image_url
+    )
+    
+    post = BlogPost.get_by_id(db, post_id)
+    return jsonify(post), 201
 
 @app.route('/api/blog/<int:post_id>', methods=['PUT'])
 @jwt_required()
@@ -295,52 +273,44 @@ def update_blog_post(post_id):
     image = request.files.get('image')
     
     db = get_db()
-    try:
-        post = BlogPost.get_by_id(db, post_id)
-        if not post:
-            return jsonify({'error': 'Blog post not found'}), 404
-        
-        image_url = post['image_url']
-        if image and allowed_file(image.filename):
-            filename = secure_filename(image.filename)
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'blog', filename)
-            image.save(image_path)
-            image_url = f'/uploads/blog/{filename}'
-        
-        BlogPost.update(
-            db,
-            post_id,
-            title=data.get('title', post['title']),
-            content=data.get('content', post['content']),
-            author=data.get('author', post['author']),
-            image_url=image_url
-        )
-        
-        updated_post = BlogPost.get_by_id(db, post_id)
-        return jsonify(updated_post), 200
-    finally:
-        db.close()
+    post = BlogPost.get_by_id(db, post_id)
+    
+    if not post:
+        return jsonify({'error': 'Blog post not found'}), 404
+    
+    image_url = post['image_url']
+    if image and allowed_file(image.filename):
+        filename = secure_filename(image.filename)
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'blog', filename)
+        image.save(image_path)
+        image_url = f'/uploads/blog/{filename}'
+    
+    BlogPost.update(
+        db,
+        post_id,
+        title=data.get('title', post['title']),
+        content=data.get('content', post['content']),
+        author=data.get('author', post['author']),
+        image_url=image_url
+    )
+    
+    updated_post = BlogPost.get_by_id(db, post_id)
+    return jsonify(updated_post), 200
 
 @app.route('/api/blog/<int:post_id>', methods=['DELETE'])
 @jwt_required()
 def delete_blog_post(post_id):
     db = get_db()
-    try:
-        BlogPost.delete(db, post_id)
-        return jsonify({'message': 'Blog post deleted successfully'}), 200
-    finally:
-        db.close()
+    BlogPost.delete(db, post_id)
+    return jsonify({'message': 'Blog post deleted successfully'}), 200
 
 # ==================== GALLERY ROUTES ====================
 
 @app.route('/api/gallery', methods=['GET'])
 def get_gallery_items():
     db = get_db()
-    try:
-        items = GalleryItem.get_all(db)
-        return jsonify(items), 200
-    finally:
-        db.close()
+    items = GalleryItem.get_all(db)
+    return jsonify(items), 200
 
 @app.route('/api/gallery', methods=['POST'])
 @jwt_required()
@@ -359,55 +329,46 @@ def create_gallery_item():
     media_type = 'video' if file_ext in ['mp4', 'webm', 'ogg'] else 'image'
     
     db = get_db()
-    try:
-        item_id = GalleryItem.create(
-            db,
-            media_type=media_type,
-            media_url=f'/uploads/gallery/{filename}',
-            title=data.get('title', ''),
-            description=data.get('description', '')
-        )
-        item = GalleryItem.get_by_id(db, item_id)
-        return jsonify(item), 201
-    finally:
-        db.close()
+    item_id = GalleryItem.create(
+        db,
+        media_type=media_type,
+        media_url=f'/uploads/gallery/{filename}',
+        title=data.get('title', ''),
+        description=data.get('description', '')
+    )
+    
+    item = GalleryItem.get_by_id(db, item_id)
+    return jsonify(item), 201
 
 @app.route('/api/gallery/<int:item_id>', methods=['DELETE'])
 @jwt_required()
 def delete_gallery_item(item_id):
     db = get_db()
-    try:
-        GalleryItem.delete(db, item_id)
-        return jsonify({'message': 'Gallery item deleted successfully'}), 200
-    finally:
-        db.close()
+    GalleryItem.delete(db, item_id)
+    return jsonify({'message': 'Gallery item deleted successfully'}), 200
 
 # ==================== CHATBOT ROUTES ====================
 
 @app.route('/api/chatbot/settings', methods=['GET'])
 def get_chatbot_settings():
     db = get_db()
-    try:
-        settings = ChatbotSettings.get(db)
-        return jsonify(settings), 200
-    finally:
-        db.close()
+    settings = ChatbotSettings.get(db)
+    return jsonify(settings), 200
 
 @app.route('/api/chatbot/settings', methods=['PUT'])
 @jwt_required()
 def update_chatbot_settings():
     data = request.get_json()
     db = get_db()
-    try:
-        ChatbotSettings.update(
-            db,
-            greeting=data.get('greeting'),
-            faqs=json.dumps(data.get('faqs', []))
-        )
-        settings = ChatbotSettings.get(db)
-        return jsonify(settings), 200
-    finally:
-        db.close()
+    
+    ChatbotSettings.update(
+        db,
+        greeting=data.get('greeting'),
+        faqs=json.dumps(data.get('faqs', []))
+    )
+    
+    settings = ChatbotSettings.get(db)
+    return jsonify(settings), 200
 
 @app.route('/api/chatbot/message', methods=['POST'])
 def chatbot_message():
@@ -415,11 +376,8 @@ def chatbot_message():
     message = data.get('message', '').lower()
     
     db = get_db()
-    try:
-        settings = ChatbotSettings.get(db)
-        faqs = json.loads(settings.get('faqs', '[]'))
-    finally:
-        db.close()
+    settings = ChatbotSettings.get(db)
+    faqs = json.loads(settings.get('faqs', '[]'))
     
     # Simple FAQ matching
     for faq in faqs:
@@ -436,18 +394,16 @@ def chatbot_message():
 @jwt_required()
 def get_dashboard_stats():
     db = get_db()
-    try:
-        products_count = len(Product.get_all(db))
-        blog_posts_count = len(BlogPost.get_all(db))
-        gallery_items_count = len(GalleryItem.get_all(db))
-        
-        return jsonify({
-            'products': products_count,
-            'blog_posts': blog_posts_count,
-            'gallery_items': gallery_items_count
-        }), 200
-    finally:
-        db.close()
+    
+    products_count = len(Product.get_all(db))
+    blog_posts_count = len(BlogPost.get_all(db))
+    gallery_items_count = len(GalleryItem.get_all(db))
+    
+    return jsonify({
+        'products': products_count,
+        'blog_posts': blog_posts_count,
+        'gallery_items': gallery_items_count
+    }), 200
 
 # ==================== FILE SERVING ====================
 
