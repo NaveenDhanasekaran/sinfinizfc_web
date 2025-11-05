@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template, redirect, url_for, session, flash
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -17,20 +17,86 @@ app.config['JWT_SECRET_KEY'] = 'jwt-secret-key-change-in-production'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+"""Ensure JWT is read from Authorization header to avoid 422 errors when verifying
+tokens from the admin dashboard which sends `Authorization: Bearer <token>`.
+"""
+app.config['JWT_TOKEN_LOCATION'] = ['headers']
+app.config['JWT_HEADER_NAME'] = 'Authorization'
+app.config['JWT_HEADER_TYPE'] = 'Bearer'
 
 CORS(app)
 jwt = JWTManager(app)
 
-# Optionally serve React build in production if it exists
-build_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'build'))
-if os.path.isdir(build_dir):
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def serve_react(path):
-        full_path = os.path.join(build_dir, path)
-        if path != '' and os.path.exists(full_path):
-            return send_from_directory(build_dir, path)
-        return send_from_directory(build_dir, 'index.html')
+# ---------- JWT error handlers for clearer behavior ----------
+@jwt.unauthorized_loader
+def _jwt_missing_token(err):
+    # Missing Authorization header
+    return jsonify({'error': 'missing_authorization', 'detail': err}), 401
+
+@jwt.invalid_token_loader
+def _jwt_invalid_token(err):
+    # Invalid token format/signature
+    return jsonify({'error': 'invalid_token', 'detail': err}), 401
+
+@jwt.expired_token_loader
+def _jwt_expired_token(jwt_header, jwt_payload):
+    # Expired token
+    return jsonify({'error': 'token_expired'}), 401
+
+# ==================== WEB ROUTES (Flask Templates) ====================
+
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/products')
+def products():
+    return render_template('products.html')
+
+@app.route('/gallery')
+def gallery():
+    return render_template('gallery.html')
+
+@app.route('/blog')
+def blog():
+    return render_template('blog.html')
+
+@app.route('/blog/<int:post_id>')
+def blog_detail(post_id):
+    return render_template('blog_detail.html', post_id=post_id)
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+# Admin routes
+@app.route('/admin/login')
+def admin_login():
+    return render_template('admin/login.html')
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    return render_template('admin/dashboard.html')
+
+@app.route('/admin/products')
+def admin_products():
+    return render_template('admin/products.html')
+
+@app.route('/admin/blog')
+def admin_blog():
+    return render_template('admin/blog.html')
+
+@app.route('/admin/gallery')
+def admin_gallery():
+    return render_template('admin/gallery.html')
+
+@app.route('/admin/chatbot')
+def admin_chatbot():
+    return render_template('admin/chatbot.html')
 
 # Ensure upload directories exist
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'products'), exist_ok=True)
@@ -50,44 +116,31 @@ def allowed_file(filename):
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    
-    if not username or not password:
-        return jsonify({'error': 'Username and password required'}), 400
-    
-    db = get_db()
-    user = User.get_by_username(db, username)
-    
-    if user and check_password_hash(user['password_hash'], password):
-        access_token = create_access_token(identity=user['id'])
+    try:
+        data = request.get_json()
+        username = (data or {}).get('username')
+        password = (data or {}).get('password')
+
+        if not username or not password:
+            return jsonify({'error': 'Username and password required'}), 400
+
+        # Dummy auth: accept any non-empty username/password
+        access_token = create_access_token(identity=username)
         return jsonify({
             'access_token': access_token,
             'user': {
-                'id': user['id'],
-                'username': user['username']
+                'username': username
             }
         }), 200
-    
-    return jsonify({'error': 'Invalid credentials'}), 401
+
+    except Exception as e:
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/auth/verify', methods=['GET'])
 @jwt_required()
 def verify_token():
-    current_user_id = get_jwt_identity()
-    db = get_db()
-    user = User.get_by_id(db, current_user_id)
-    
-    if user:
-        return jsonify({
-            'user': {
-                'id': user['id'],
-                'username': user['username']
-            }
-        }), 200
-    
-    return jsonify({'error': 'User not found'}), 404
+    identity = get_jwt_identity()
+    return jsonify({'user': {'username': identity}}), 200
 
 # ==================== PRODUCTS ROUTES ====================
 
@@ -368,20 +421,6 @@ def contact_form():
     return jsonify({'message': 'Message sent successfully'}), 200
 
 if __name__ == '__main__':
-    fe_proc = None
-    if os.environ.get('START_FRONTEND_DEV') == '1':
-        frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
-        npm_cmd = 'npm.cmd' if os.name == 'nt' else 'npm'
-        try:
-            fe_proc = subprocess.Popen([npm_cmd, 'start'], cwd=frontend_path)
-        except Exception:
-            fe_proc = None
-
-        def _cleanup():
-            if fe_proc is not None and fe_proc.poll() is None:
-                fe_proc.terminate()
-        atexit.register(_cleanup)
-
     debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
     port = int(os.environ.get('PORT', '5000'))
     app.run(host='0.0.0.0', port=port, debug=debug_mode)

@@ -74,6 +74,13 @@ def init_db():
     ''')
     
     # Check if default admin user exists
+    cursor.execute('SELECT * FROM users WHERE username = ?', ('ayeshanawazraza@gmail.com',))
+    if not cursor.fetchone():
+        password_hash = generate_password_hash('Emotional.Intelligence@123')
+        cursor.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)', 
+                      ('ayeshanawazraza@gmail.com', password_hash))
+    
+    # Also keep the old admin for backward compatibility
     cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
     if not cursor.fetchone():
         password_hash = generate_password_hash('admin123')

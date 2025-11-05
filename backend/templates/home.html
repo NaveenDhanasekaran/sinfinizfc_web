@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Sinfini Marketing FZC{% endblock %}
+
+{% block content %}
+<!-- Hero Slider - Exact React match -->
+<div class="pt-20">
+    <div class="relative h-600 overflow-hidden">
+        <div class="hero-slide">
+            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1558769132-cb1aea1f1f57?w=1200')">
+                <div class="absolute inset-0 bg-gradient-to-r from-navy-950-90 to-navy-900-70"></div>
+            </div>
+            <div class="hero-content">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                    <div class="max-w-3xl">
+                        <h1 class="hero-title animate-fade-in">
+                            Premium Textile Exports
+                        </h1>
+                        <p class="hero-subtitle">
+                            Quality fabrics for international markets
+                        </p>
+                        <a href="{{ url_for('products') }}" class="inline-flex items-center space-x-2 bg-gold-500 hover:bg-gold-600 text-navy-900 px-8 py-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105">
+                            <span>Explore Products</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold text-navy-800 mb-4">Why Choose Sinfini Marketing?</h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                We are committed to delivering exceptional textile products with unmatched quality and service
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="text-center card-hover bg-gray-50 p-8 rounded-xl">
+                <div class="bg-gold-500 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-award text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-navy-800 mb-3">Premium Quality</h3>
+                <p class="text-gray-600">
+                    We source and export only the finest textile products, ensuring exceptional quality in every shipment.
+                </p>
+            </div>
+            
+            <div class="text-center card-hover bg-gray-50 p-8 rounded-xl">
+                <div class="bg-gold-500 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shipping-fast text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-navy-800 mb-3">Global Delivery</h3>
+                <p class="text-gray-600">
+                    Reliable worldwide shipping with tracking and timely delivery to your doorstep.
+                </p>
+            </div>
+            
+            <div class="text-center card-hover bg-gray-50 p-8 rounded-xl">
+                <div class="bg-gold-500 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-headset text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-navy-800 mb-3">24/7 Support</h3>
+                <p class="text-gray-600">
+                    Our dedicated team is always ready to assist you with your textile export needs.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold text-navy-800 mb-4">Featured Products</h2>
+            <p class="text-xl text-gray-600">Discover our premium textile collection</p>
+        </div>
+        
+        <div class="product-grid" id="featured-products">
+            <!-- Products will be loaded here -->
+        </div>
+        
+        <div class="text-center mt-12">
+            <a href="{{ url_for('products') }}" class="btn-primary text-lg px-8 py-4">
+                View All Products <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-16 bg-navy-800 text-white">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+                <div class="text-4xl font-bold text-gold-400 mb-2">500+</div>
+                <div class="text-lg">Happy Clients</div>
+            </div>
+            <div>
+                <div class="text-4xl font-bold text-gold-400 mb-2">50+</div>
+                <div class="text-lg">Countries Served</div>
+            </div>
+            <div>
+                <div class="text-4xl font-bold text-gold-400 mb-2">1000+</div>
+                <div class="text-lg">Products Exported</div>
+            </div>
+            <div>
+                <div class="text-4xl font-bold text-gold-400 mb-2">10+</div>
+                <div class="text-lg">Years Experience</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-white">
+    <div class="container mx-auto px-4 text-center">
+        <h2 class="text-4xl font-bold text-navy-800 mb-4">Ready to Start Your Order?</h2>
+        <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Get in touch with our team today and let us help you find the perfect textile products for your business.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="{{ url_for('contact') }}" class="btn-primary text-lg px-8 py-4">
+                <i class="fas fa-envelope mr-2"></i>Contact Us
+            </a>
+            <a href="{{ url_for('about') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-8 py-4 rounded-lg transition-colors text-lg">
+                <i class="fas fa-info-circle mr-2"></i>Learn More
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Product Modal -->
+<div id="product-modal" class="modal">
+    <div class="modal-content">
+        <!-- Content will be loaded dynamically -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load featured products
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/products')
+        .then(response => response.json())
+        .then(products => {
+            const container = document.getElementById('featured-products');
+            const featuredProducts = products.slice(0, 6); // Show first 6 products
+            
+            container.innerHTML = featuredProducts.map(product => `
+                <div class="product-card cursor-pointer" onclick="openProductModal(${product.id})">
+                    ${product.image_url ? `
+                        <img src="${product.image_url}" alt="${product.name}" class="product-image">
+                    ` : `
+                        <div class="product-image bg-gray-200 flex items-center justify-center">
+                            <i class="fas fa-image text-gray-400 text-4xl"></i>
+                        </div>
+                    `}
+                    <div class="p-6">
+                        <div class="mb-2">
+                            <span class="bg-gold-100 text-gold-800 px-2 py-1 rounded-full text-xs font-medium">${product.category}</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-navy-800 mb-2">${product.name}</h3>
+                        <p class="text-gray-600 text-sm line-clamp-3">${product.description}</p>
+                        <div class="mt-4">
+                            <span class="text-gold-600 font-semibold hover:text-gold-700">View Details →</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('Error loading products:', error);
+            document.getElementById('featured-products').innerHTML = `
+                <div class="col-span-full text-center py-8">
+                    <p class="text-gray-500">Unable to load products at the moment.</p>
+                </div>
+            `;
+        });
+});
+</script>
+{% endblock %}
