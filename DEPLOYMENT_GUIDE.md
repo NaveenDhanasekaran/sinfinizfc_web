@@ -28,7 +28,7 @@ python app.py
 ```bash
 cd c:\sinfin_website
 git add .
-git commit -m "Migrate to SQLAlchemy with Supabase support and professional admin UI"
+git commit -m "Fix Python 3.13 compatibility with SQLAlchemy 2.0.35"
 git push origin main
 ```
 
